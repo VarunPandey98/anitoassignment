@@ -9,17 +9,20 @@ const port = process.env.PORT || 2000;
 app.use(bodyParser.json());
 app.use(express.json())
 
+
+
 // add new products and prices by admin
 app.post('/addNew', async (req, res) => {
     try {
         const newProducts = new productDetails({
             product_name: req.body.product_name,
-            product_price: req.body.product_price
+            product_price: req.body.product_price,
         })
 
         // generating tokens
-      const token = await newProducts.generateAuthToken();
-
+        const token = await newProducts.generateAuthToken();
+        const verifydata =  await jwt.verify(token, "mynameisvarunkumarpandeyandharshit");
+       
         const adminRecords = await newProducts.save();
         res.send(adminRecords);
     } catch (error) {
@@ -32,6 +35,8 @@ app.post('/addNew', async (req, res) => {
 //update products and prices by admin
 app.patch('/update/admin/:id', async (req, res) => {
     try {
+        const token = await newProducts.generateAuthToken();
+        const verifydata =  await jwt.verify(token, "mynameisvarunkumarpandeyandharshit");
         const updateRecord = await productDetails.findByIdAndUpdate({ _id: req.params.id }, req.body, { new: true });
         res.send(updateRecord);
     } catch (error) {
@@ -42,6 +47,8 @@ app.patch('/update/admin/:id', async (req, res) => {
 //delete products and prices by admin
 app.delete('/delete/admin/:id', async (req, res) => {
     try {
+        const token = await newProducts.generateAuthToken();
+        const verifydata =  await jwt.verify(token, "mynameisvarunkumarpandeyandharshit");
         const updateRecord = await productDetails.findByIdAndRemove({ _id: req.params.id });
         res.send(updateRecord);
     } catch (error) {
@@ -50,10 +57,10 @@ app.delete('/delete/admin/:id', async (req, res) => {
 })
 
 //get data by user without id
-app.get('/addNew', async(req,res)=>{
+app.get('/addNew', async (req, res) => {
     try {
         const getdata = await productDetails.find();
-        res.send(getdata);  
+        res.send(getdata);
     } catch (error) {
         res.status(404).send(error);
     }
@@ -62,13 +69,14 @@ app.get('/addNew', async(req,res)=>{
 //get data by id by user
 app.get('/Userdata/:id', async (req, res) => {
     try {
-        // console.log(_id=req.params.id)
         const getRecord = await productDetails.find({ _id: req.params.id });
         res.send(getRecord);
     } catch (error) {
         res.status(400).send(error)
     }
 })
+
+
 
 // database connection
 mongoose.connect("mongodb://localhost:27017/product_details", { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false })
@@ -88,23 +96,23 @@ const post_schema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    tokens:[{
-       token:{
-           type:String,
-           required:true
-       }
+    tokens: [{
+        token: {
+            type: String,
+            required: true
+        }
     }]
 })
 
-post_schema.methods.generateAuthToken = async function(){
+post_schema.methods.generateAuthToken = async function () {
     try {
-        console.log(this._id)
-        const token = jwt.sign({_id:this._id.toString()}, "mynameisvarunkumarpandeyandharshit");
-        this.tokens = this.tokens.concat({token:token});
+    
+        const token = jwt.sign({ _id: this._id.toString() }, "mynameisvarunkumarpandeyandharshit");
+        this.tokens = this.tokens.concat({ token: token });
         await this.save();
         return token;
     } catch (error) {
-       res.send("the error part"+ error); 
+        res.send("the error part" + error);
     }
 }
 
@@ -113,5 +121,5 @@ const productDetails = new mongoose.model("product_details", post_schema);
 module.exports = productDetails;
 
 app.listen(port, () => {
-    console.log(`server run on ${port}`);
+    console.log(`server run on ${port}`)
 })
